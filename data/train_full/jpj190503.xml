@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JPS xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="JPS" AN="1905" CODE="JPJ" MOIS="03">
+    <DEBUA N="1"></DEBUA>
+    <DECI>
+        <TDECI></TDECI>
+        <DEBUR DATE="10/03/1905" N="1"></DEBUR>
+        <INFO COLLA="OUI" ID="I7374644322197">
+            <NINFO>1</NINFO>
+            <REFDOC DATE="10/03/1905" ID="R4D5E5AD770CE4-EFL" JURI-DATE="1905-03-10" JURI-JURISDICTION="Conseil d'État" JURI-JURISDICTION-REFID="CE" JURI-NUMBER="13606" NATURE="CE" NOM="Mac-Donnel" REF="13606">CE 10 mars 1905, n° 13606 Mac-Donnel</REFDOC>
+            <TXD>
+                <AL>Considérant que, pour demander l'annulation de la décision attaquée, la requérante se fonde sur ce qu'elle a été prise en violation de l'article 13 de la loi du 1<E>er</E> juillet 1901, d'après lequel le rejet de sa demande n'aurait pu être prononcé que par décret rendu en Conseil d'Etat ;</AL>
+                <AL>Mais considérant qu'il est de principe qu'en dehors d'un texte, qui spécifie qu'il doit être statué « le Conseil d'Etat entendu », il appartient au gouvernement de décider quelles sont les affaires, qui seront soumises à l'examen préalable du Conseil d'Etat ; que si, aux termes de l'article 13 de la loi susvisée, aucune congrégation ne peut fonder un nouvel établissement qu'en vertu d'un décret rendu en Conseil d'Etat, cet article ne contient aucune disposition pour le cas où l'autorisation n'est pas accordée ; que même il résulte des termes de l'article 24 du règlement d'administration publique du 16 août 1901 que le ministre n'est pas tenu de faire procéder à l'instruction des demandes dont il est saisi ; qu'il suit de là que le ministre de l'Intérieur, chargé de pourvoir à l'exécution de la loi, a le droit, en ce qui concerne ces demandes, de faire connaître aux intéressés par simple décision administrative qu'il n'y sera pas donné suite et qu'en prenant la décision attaquée le ministre n'a commis aucun excès de pouvoir ; (Rejet).</AL>
+            </TXD>
+        </INFO>
+        <FINUR></FINUR>
+    </DECI>
+    <FINUA></FINUA>
+</JPS>
