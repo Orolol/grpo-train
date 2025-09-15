@@ -26,6 +26,32 @@ Example
 
 from __future__ import annotations
 
+# IMPORTANT: Configure CUDA allocator before importing torch/unsloth/vLLM.
+# vLLM + WSL can fail with "torch.cuda.MemPool doesn't currently support
+# expandable_segments" if PYTORCH_CUDA_ALLOC_CONF enables expandable_segments.
+import os as _os
+_alloc_conf = _os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "")
+if "expandable_segments" in _alloc_conf.lower():
+    # Strip any user-provided expandable_segments setting to avoid MemPool error.
+    _alloc_conf = ";".join(
+        p for p in _alloc_conf.split(";")
+        if not p.strip().lower().startswith("expandable_segments")
+    )
+    if _alloc_conf:
+        _os.environ["PYTORCH_CUDA_ALLOC_CONF"] = _alloc_conf
+    else:
+        _os.environ.pop("PYTORCH_CUDA_ALLOC_CONF", None)
+else:
+    # Explicitly disable to avoid external defaults toggling it on.
+    _os.environ["PYTORCH_CUDA_ALLOC_CONF"] = (
+        (_alloc_conf + ";") if _alloc_conf else ""
+    ) + "expandable_segments:False"
+
+# Keep Unsloth in standby mode for vLLM when requested.
+_os.environ.setdefault("UNSLOTH_VLLM_STANDBY", "1")
+
+from unsloth import FastLanguageModel, PatchFastRL
+
 import argparse
 import json
 import os
@@ -34,14 +60,13 @@ import re
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
 import torch
 from datasets import Dataset
 
-from unsloth import FastLanguageModel, PatchFastRL
 from trl import GRPOConfig, GRPOTrainer
-
 
 # -----------------------------
 # Utilities
@@ -72,26 +97,6 @@ def extract_relevant_section(xml_text: str) -> str:
     return xml_text
 
 
-def chunk_text(text: str, max_chars: int) -> List[str]:
-    if max_chars <= 0 or len(text) <= max_chars:
-        return [text]
-    # Try to respect paragraph-like tags if present
-    parts = re.findall(r"<(?:AL|P)>[\s\S]*?</(?:AL|P)>", text)
-    if not parts:
-        return [text[i : i + max_chars] for i in range(0, len(text), max_chars)]
-    chunks: List[str] = []
-    buf = ""
-    for p in parts:
-        if len(buf) + len(p) > max_chars and buf:
-            chunks.append(buf)
-            buf = p
-        else:
-            buf += p
-    if buf:
-        chunks.append(buf)
-    return chunks
-
-
 def _fit_prompt_to_token_limit(
     learner_template: str,
     rules_text: str,
@@ -105,53 +110,50 @@ def _fit_prompt_to_token_limit(
     # Quick check: can empty text fit? If not, skip.
     base_prompt = learner_template.format(rules=rules_text, text="")
     base_tokens = tokenizer(base_prompt, add_special_tokens=False).input_ids
+    print(f"Base prompt length (rules + template, no text) = {len(base_tokens)} tokens")
     if len(base_tokens) > token_limit:
         return None
 
-    lo, hi = 0, len(text)
-    best_len = 0
-    while lo <= hi:
-        mid = (lo + hi) // 2
-        cand_text = text[:mid]
-        cand_prompt = learner_template.format(rules=rules_text, text=cand_text)
-        n_tok = len(tokenizer(cand_prompt, add_special_tokens=False).input_ids)
-        if n_tok <= token_limit:
-            best_len = mid
-            lo = mid + 1
-        else:
-            hi = mid - 1
-    trimmed = text[:best_len]
-    final_prompt = learner_template.format(rules=rules_text, text=trimmed)
-    return final_prompt, trimmed
+    # No trimming anymore: we either accept or skip based on tokenized length.
+    prompt = learner_template.format(rules=rules_text, text=text)
+    n_tok = len(tokenizer(prompt, add_special_tokens=False).input_ids)
+    print(f"Full text length = {n_tok} tokens")
+    if n_tok <= token_limit:
+        return prompt, text
+    return None
 
 
 def build_dataset(
     xml_dir: str,
     learner_template: str,
     rules_text: str,
-    max_chars_per_sample: int,
     tokenizer,
     prompt_token_limit: int,
     max_samples: Optional[int] = None,
 ) -> Tuple[Dataset, Dict[str, str]]:
     rows: List[Dict[str, str]] = []
     prompt_to_text: Dict[str, str] = {}
+    skipped_long = 0
     for fp in list_xml_files(xml_dir):
         try:
             xml = read_file(fp)
         except Exception:
             continue
         section = extract_relevant_section(xml)
-        for chunk in chunk_text(section, max_chars_per_sample):
-            fitted = _fit_prompt_to_token_limit(learner_template, rules_text, chunk, tokenizer, prompt_token_limit)
-            if not fitted:
-                continue
-            prompt, trimmed = fitted
-            rows.append({"prompt": prompt})
-            prompt_to_text[prompt] = trimmed
-            if max_samples is not None and len(rows) >= max_samples:
-                return Dataset.from_list(rows), prompt_to_text
-    return Dataset.from_list(rows), prompt_to_text
+        fitted = _fit_prompt_to_token_limit(learner_template, rules_text, section, tokenizer, prompt_token_limit)
+        if not fitted:
+            skipped_long += 1
+            continue
+        prompt, kept_text = fitted
+        rows.append({"prompt": prompt})
+        prompt_to_text[prompt] = kept_text
+        if max_samples is not None and len(rows) >= max_samples:
+            ds = Dataset.from_list(rows)
+            print(f"Built dataset with {len(ds)} samples (skipped {skipped_long} too-long documents)")
+            return ds, prompt_to_text
+    ds = Dataset.from_list(rows)
+    print(f"Built dataset with {len(ds)} samples (skipped {skipped_long} too-long documents)")
+    return ds, prompt_to_text
 
 
 # -----------------------------
@@ -169,29 +171,9 @@ class JudgeClient:
             from openai import OpenAI  # type: ignore
             self._client = OpenAI(base_url=self.base_url, api_key=self.api_key)
         except Exception:
-            self._client = None
+            raise ImportError("The openai package is required for JudgeClient. Please install/openai v1+")
 
-    def _post_chat_requests(self, content: str, max_tokens: int = 64) -> str:
-        import requests
-        url = f"{self.base_url}/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": self.model,
-            "messages": [{"role": "user", "content": content}],
-            "temperature": 0.0,
-            "max_tokens": max_tokens,
-        }
-        try:
-            r = requests.post(url, headers=headers, json=payload, timeout=self.timeout)
-            r.raise_for_status()
-            data = r.json()
-            return data.get("choices", [{}])[0].get("message", {}).get("content", "")
-        except Exception as e:
-            print(f"[judge] error(requests): {e}")
-            return ""
+    # Removed requests-based fallbacks; always use OpenAI SDK below.
 
     def _post_openai_responses(self, content: str) -> str:
         try:
@@ -246,18 +228,66 @@ class JudgeClient:
         scores: List[float] = []
         for p in prompts:
             content = ""
-            if self._client is not None:
-                # Heuristic: use Responses API for GPT-5 family, else chat.completions
-                if self.model.startswith("gpt-5"):
-                    content = self._post_openai_responses(p)
-                    if not content:
-                        content = self._post_openai_chat(p)
-                else:
+            # Heuristic: use Responses API for GPT-5 family, else chat.completions
+            if self.model.startswith("gpt-5"):
+                content = self._post_openai_responses(p)
+                if not content:
                     content = self._post_openai_chat(p)
             else:
-                content = self._post_chat_requests(p)
+                content = self._post_openai_chat(p)
             scores.append(self.parse_score(content))
         return scores
+
+    def _score_one_openai(self, prompt: str, max_tokens: int = 64) -> float:
+        """Thread-worker: call OpenAI Responses/Chat with retries and backoff."""
+        prefer_responses = self.model.startswith("gpt-5")
+        delay = 0.5
+        for attempt in range(3):
+            try:
+                text = ""
+                if prefer_responses:
+                    text = self._post_openai_responses(prompt)
+                    if not text:
+                        text = self._post_openai_chat(prompt, max_tokens=max_tokens)
+                else:
+                    text = self._post_openai_chat(prompt, max_tokens=max_tokens)
+                if text:
+                    return self.parse_score(text)
+            except Exception as e:
+                print(f"[judge] _score_one_openai attempt {attempt+1} error: {e}")
+            time.sleep(delay)
+            delay *= 2
+        return 0.0
+
+    def score_batch_concurrent(self, prompts: List[str], concurrency: int = 8, max_tokens: int = 64) -> List[float]:
+        if not prompts:
+            return []
+        # Use threads to parallelize OpenAI SDK calls.
+        results: List[float] = [0.0] * len(prompts)
+        with ThreadPoolExecutor(max_workers=max(1, concurrency)) as ex:
+            future_to_idx = {
+                ex.submit(self._score_one_openai, prompt, max_tokens): i
+                for i, prompt in enumerate(prompts)
+            }
+            for fut in as_completed(future_to_idx):
+                idx = future_to_idx[fut]
+                try:
+                    results[idx] = float(np.clip(fut.result(), 0.0, 1.0))
+                except Exception as e:
+                    print(f"[judge] worker error at idx {idx}: {e}")
+                    results[idx] = 0.0
+        return results
+
+
+def _strip_qwen_thinking(text: str) -> str:
+    """Return the substring after the first </think> tag if present.
+    If not found, return the original text.
+    """
+    marker = "</think>"
+    idx = text.find(marker)
+    if idx == -1:
+        return text
+    return text[idx + len(marker):].lstrip()
 
 
 def make_reward_fn(
@@ -265,21 +295,50 @@ def make_reward_fn(
     judge_template: str,
     prompt_to_text: Dict[str, str],
     rules_text: str,
+    concurrency: int,
 ):
     def reward_fn(prompts: List[str], completions: List[str], **kwargs) -> List[float]:
-        batch: List[str] = []
-        for p, c in zip(prompts, completions):
+        # Pre-evaluate completions: empty or invalid JSON -> -1 (penalty)
+        print(completions[0])
+        final_scores: List[float] = [-1.0] * len(completions)
+        judge_batch: List[str] = []
+        judge_map: List[int] = []  # indices in original batch that will receive judge scores
+
+        for i, (p, c_raw) in enumerate(zip(prompts, completions)):
+            c = _strip_qwen_thinking(c_raw or "")
+            if not c.strip():
+                # Keep -1.0 penalty
+                continue
+            try:
+                json.loads(c)
+            except Exception:
+                # Not valid JSON -> keep -1.0
+                continue
+            # Valid JSON: prepare judge prompt
             txt = prompt_to_text.get(p, "")
             jp = judge_template.format(rules=rules_text, text=txt, candidate=c)
-            batch.append(jp)
+            judge_map.append(i)
+            judge_batch.append(jp)
+
+        # If nothing to judge, return penalties directly
+        if not judge_batch:
+            return final_scores
+
         backoff = 1.0
         for _ in range(3):
-            scores = judge.score_batch(batch)
-            if len(scores) == len(batch):
-                return [float(np.clip(s, 0.0, 1.0)) for s in scores]
+            scores = judge.score_batch_concurrent(judge_batch, concurrency=concurrency)
+            if len(scores) == len(judge_batch):
+                # Clamp judge-provided scores to [0,1] and write into final list
+                for idx, s in zip(judge_map, scores):
+                    final_scores[idx] = float(np.clip(s, 0.0, 1.0))
+                return final_scores
             time.sleep(backoff)
             backoff *= 2
-        return [0.0] * len(batch)
+
+        # On repeated failure: set 0.0 for judged items (keep -1 for invalid ones)
+        for idx in judge_map:
+            final_scores[idx] = 0.0
+        return final_scores
 
     return reward_fn
 
@@ -303,19 +362,24 @@ def build_model_tokenizer(
     max_seq_length: int,
     lora_rank: int,
     load_in_4bit: bool,
+    enable_vllm: bool,
+    gpu_memory_utilization: float,
 ):
+
     PatchFastRL("GRPO", FastLanguageModel)
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=base_model,
         max_seq_length=max_seq_length,
         load_in_4bit=load_in_4bit,
-        fast_inference=True,
+        fast_inference=bool(enable_vllm),
+        gpu_memory_utilization=gpu_memory_utilization,
+        unsloth_vllm_standby=True,
     )
     model = FastLanguageModel.get_peft_model(
         model,
         r=lora_rank,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        lora_alpha=lora_rank,
+        lora_alpha=lora_rank * 2,
         use_gradient_checkpointing="unsloth",
         random_state=3407,
     )
@@ -333,8 +397,17 @@ def build_trainer(
     max_prompt_len: int,
     max_completion_len: int,
     learning_rate: float,
+    use_vllm: bool,
     
 ):
+    # Ensure completion length fits in model max when combined with prompt limit
+    max_model_len = int(getattr(getattr(model, "config", object()), "max_position_embeddings", getattr(tokenizer, "model_max_length", 2048)))
+    if max_completion_len and max_prompt_len and max_model_len:
+        headroom = max(1, max_model_len - max_prompt_len - 8)
+        effective_completion_len = max(1, min(max_completion_len, headroom))
+    else:
+        effective_completion_len = max_completion_len or 128
+
     args = GRPOConfig(
         learning_rate=learning_rate,
         adam_beta1 = 0.9,
@@ -344,15 +417,15 @@ def build_trainer(
         lr_scheduler_type="cosine",
         optim="adamw_8bit",
         logging_steps=1,
-        per_device_train_batch_size=1,
-        gradient_accumulation_steps=1,
+        auto_find_batch_size=True,
+        gradient_accumulation_steps=4,
         num_generations=num_generations,
         max_prompt_length=max_prompt_len,
-        max_completion_length=max_completion_len,
+        max_completion_length=effective_completion_len,
         num_train_epochs=epochs,
         report_to="none",
         output_dir=output_dir,
-        use_vllm=True,
+        use_vllm=bool(use_vllm),
         loss_type="grpo",
     )
     return GRPOTrainer(
@@ -361,6 +434,7 @@ def build_trainer(
         reward_funcs=[reward_fn],
         args=args,
         train_dataset=dataset,
+        
     )
 
 
@@ -377,8 +451,9 @@ def evaluate(
     judge_template: str,
     prompt_to_text: Dict[str, str],
     rules_text: str,
-    max_new_tokens: int,
+    max_completion_length: int,
     prompt_token_limit: int,
+    model_max_len: int,
 ) -> float:
     model.eval()
     scores: List[float] = []
@@ -386,14 +461,34 @@ def evaluate(
         inputs = tokenizer(p, return_tensors="pt", truncation=True, max_length=prompt_token_limit)
         if torch.cuda.is_available():
             inputs = {k: v.cuda() for k, v in inputs.items()}
+        # Ensure we do not exceed model context
+        prompt_len = int(inputs["input_ids"].shape[-1])
+        allow_new = max(1, min(max_completion_length, model_max_len - prompt_len - 8))
         outputs = model.generate(
             **inputs,
-            max_new_tokens=max_new_tokens,
+            max_new_tokens=allow_new,
             temperature=0.7,
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id,
         )
-        completion = tokenizer.decode(outputs[0][len(inputs["input_ids"][0]):], skip_special_tokens=True)
+        gen_ids = outputs[0][len(inputs["input_ids"][0]):]
+        # Prefer token-level parsing of </think> if available
+        try:
+            end_think_id = tokenizer.encode("</think>", add_special_tokens=False)
+            if len(end_think_id) == 1:
+                eid = end_think_id[0]
+                ids_list = gen_ids.tolist()
+                # index of last occurrence of </think>
+                idx = len(ids_list) - ids_list[::-1].index(eid)
+                thinking_ids = ids_list[:idx]
+                content_ids = ids_list[idx:]
+                completion = tokenizer.decode(content_ids, skip_special_tokens=True)
+            else:
+                completion = tokenizer.decode(gen_ids, skip_special_tokens=True)
+                completion = _strip_qwen_thinking(completion)
+        except Exception:
+            completion = tokenizer.decode(gen_ids, skip_special_tokens=True)
+            completion = _strip_qwen_thinking(completion)
         txt = prompt_to_text.get(p, "")
         jp = judge_template.format(rules=rules_text, text=txt, candidate=completion)
         s = judge.score_batch([jp])[0]
@@ -414,29 +509,29 @@ def main() -> None:
     parser.add_argument("--rules_path", type=str, default=str(Path("data") / "rules.md"))
     parser.add_argument("--learner_prompt", type=str, default=str(Path("data") / "learner_prompt.md"))
     parser.add_argument("--judge_prompt", type=str, default=str(Path("data") / "judge_prompt.md"))
-    parser.add_argument("--max_chars_per_sample", type=int, default=20000)
     parser.add_argument("--max_samples", type=int, default=None)
 
     # Model
-    parser.add_argument("--base_model", type=str, default="unsloth/mistral-7b-instruct-v0.3-bnb-4bit")
+    parser.add_argument("--base_model", type=str, default="unsloth/Qwen3-4B-Thinking-2507-unsloth-bnb-4bit")
     parser.add_argument("--output_dir", type=str, default="output")
-    parser.add_argument("--max_seq_length", type=int, default=4096)
+    parser.add_argument("--max_seq_length", type=int, default=6000)
     parser.add_argument("--lora_rank", type=int, default=32)
     parser.add_argument("--load_in_4bit", action="store_true")
-    parser.add_argument("--max_prompt_length", type=int, default=4096)
-    parser.add_argument("--max_completion_length", type=int, default=4096)
-    parser.add_argument("--max_new_tokens", type=int, default=4096)
+    parser.add_argument("--max_completion_length", type=int, default=2048)
 
     # Training
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--steps", type=int, default=None)
-    parser.add_argument("--num_generations", type=int, default=4)
+    parser.add_argument("--num_generations", type=int, default=1)
     parser.add_argument("--learning_rate", type=float, default=5e-6)
+    parser.add_argument("--enable_vllm", action="store_true", help="Enable vLLM fast inference (higher VRAM usage)")
+    parser.add_argument("--gpu_memory_utilization", type=float, default=0.80, help="GPU memory fraction for vLLM KV cache")
 
     # Judge
     parser.add_argument("--judge_model", type=str, default="gpt-5-nano")
     parser.add_argument("--judge_base_url", type=str, default=os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1"))
     parser.add_argument("--judge_api_key", type=str, default=os.environ.get("OPENAI_API_KEY", ""))
+    parser.add_argument("--judge_concurrency", type=int, default=8, help="Parallel requests for judge scoring")
 
     args = parser.parse_args()
 
@@ -457,14 +552,24 @@ def main() -> None:
         max_seq_length=args.max_seq_length,
         lora_rank=args.lora_rank,
         load_in_4bit=bool(args.load_in_4bit),
+        enable_vllm=bool(args.enable_vllm),
+        gpu_memory_utilization=float(args.gpu_memory_utilization),
     )
     print(f"Parameters: {model.num_parameters()}")
 
-    # Prompt token limit with safety margin
-    # Keep some headroom under model/tokenizer max to avoid runtime errors (e.g., bos, system tokens)
-    safety_margin = 128
-    prompt_token_limit = max(256, min(args.max_prompt_length, getattr(tokenizer, "model_max_length", 2048) - safety_margin))
-    print(f"Using prompt token limit: {prompt_token_limit}")
+    # Prompt token limit with safety margin and reserved completion budget
+    safety_margin = 64
+    model_ctx = int(min(args.max_seq_length, getattr(tokenizer, "model_max_length", args.max_seq_length)))
+    reserved_completion = int(max(1, args.max_completion_length))
+    # prompt_token_limit = max(
+    #     16,
+    #     model_ctx - reserved_completion - safety_margin
+    # )
+
+    prompt_token_limit = model_ctx
+    print(
+        f"Using prompt token limit: {prompt_token_limit} (ctx={model_ctx}, reserve={reserved_completion}, margin={safety_margin})"
+    )
 
     # Quick diagnostic: does base prompt (template + rules, empty text) already exceed the limit?
     base_prompt = learner_template.format(rules=rules_text, text="")
@@ -478,7 +583,6 @@ def main() -> None:
         args.train_dir,
         learner_template,
         rules_text,
-        args.max_chars_per_sample,
         tokenizer,
         prompt_token_limit,
         args.max_samples,
@@ -494,7 +598,7 @@ def main() -> None:
     )
 
     # Reward
-    reward_fn = make_reward_fn(judge, judge_template, train_prompt_to_text, rules_text)
+    reward_fn = make_reward_fn(judge, judge_template, train_prompt_to_text, rules_text, args.judge_concurrency)
 
     # Trainer
     trainer = build_trainer(
@@ -508,6 +612,7 @@ def main() -> None:
         max_prompt_len=prompt_token_limit,
         max_completion_len=args.max_completion_length,
         learning_rate=args.learning_rate,
+        use_vllm=bool(args.enable_vllm),
     )
 
     # Train
@@ -525,7 +630,6 @@ def main() -> None:
         args.test_dir,
         learner_template,
         rules_text,
-        args.max_chars_per_sample,
         tokenizer,
         prompt_token_limit,
         None,
@@ -540,8 +644,9 @@ def main() -> None:
         judge_template,
         prompt_to_text,
         rules_text,
-        max_new_tokens=args.max_new_tokens,
+        max_completion_length=args.max_completion_length,
         prompt_token_limit=prompt_token_limit,
+        model_max_len=args.max_seq_length,
     )
     print(f"Test average score: {score:.4f}")
 

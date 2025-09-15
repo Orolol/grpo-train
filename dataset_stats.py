@@ -151,7 +151,7 @@ def main() -> None:
     ap.add_argument("--data_dir", type=str, default=str(Path("data") / "train_full"))
     ap.add_argument("--prompt_path", type=str, default=None, help="Optional learner prompt template with {rules} and {text}")
     ap.add_argument("--rules_path", type=str, default=None, help="Optional rules text injected into the prompt template")
-    ap.add_argument("--base_model", type=str, default="mistralai/Mistral-7B-Instruct-v0.2")
+    ap.add_argument("--base_model", type=str, default="unsloth/mistral-7b-instruct-v0.3-bnb-4bit")
     ap.add_argument("--max_chars_per_sample", type=int, default=20000)
     ap.add_argument("--topk", type=int, default=10, help="Show top-k longest samples")
     ap.add_argument("--thresholds", type=int, nargs="*", default=[512, 1024, 1536, 2048, 4096, 8192])
