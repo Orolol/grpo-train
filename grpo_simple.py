@@ -383,7 +383,6 @@ def build_model_tokenizer(
         lora_alpha=16,
         use_gradient_checkpointing="unsloth",
         lora_dropout=0,
-        bias=None,
         random_state=3407,
     )
     return model, tokenizer
