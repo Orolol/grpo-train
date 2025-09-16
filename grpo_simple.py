@@ -381,7 +381,8 @@ def build_model_tokenizer(
         r=lora_rank,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         lora_alpha=16,
-        use_gradient_checkpointing="unsloth",
+        # Native checkpointing avoids flex-attention backward failures on GPT-OSS 20B
+        use_gradient_checkpointing=True,
         lora_dropout=0,
         random_state=3407,
     )
