@@ -368,6 +368,7 @@ def build_model_tokenizer(
 
     PatchFastRL("GRPO", FastLanguageModel)
     model, tokenizer = FastLanguageModel.from_pretrained(
+        dtype=None,
         model_name=base_model,
         max_seq_length=max_seq_length,
         load_in_4bit=load_in_4bit,
@@ -379,8 +380,9 @@ def build_model_tokenizer(
         model,
         r=lora_rank,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        lora_alpha=lora_rank * 2,
+        lora_alpha=16,
         use_gradient_checkpointing="unsloth",
+        lora_dropout=0,
         random_state=3407,
     )
     return model, tokenizer
