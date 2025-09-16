@@ -373,7 +373,7 @@ def build_model_tokenizer(
         load_in_4bit=load_in_4bit,
         fast_inference=bool(enable_vllm),
         gpu_memory_utilization=gpu_memory_utilization,
-        unsloth_vllm_standby=True,
+        # unsloth_vllm_standby=True,
     )
     model = FastLanguageModel.get_peft_model(
         model,
