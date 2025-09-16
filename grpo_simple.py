@@ -383,6 +383,7 @@ def build_model_tokenizer(
         lora_alpha=16,
         use_gradient_checkpointing="unsloth",
         lora_dropout=0,
+        bias=None,
         random_state=3407,
     )
     return model, tokenizer
@@ -558,6 +559,11 @@ def main() -> None:
         gpu_memory_utilization=float(args.gpu_memory_utilization),
     )
     print(f"Parameters: {model.num_parameters()}")
+
+    # Align generation defaults with CLI args to avoid transformers warnings
+    if getattr(model, "generation_config", None) is not None:
+        model.generation_config.max_length = args.max_seq_length
+        model.generation_config.max_new_tokens = args.max_completion_length
 
     # Prompt token limit with safety margin and reserved completion budget
     safety_margin = 64
