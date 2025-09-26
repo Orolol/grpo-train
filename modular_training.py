@@ -437,25 +437,59 @@ class JudgeClient:
 
     def score_batch_concurrent(self, prompts: List[str], concurrency: int = 8) -> List[float]:
         """Score a batch of outputs using the judge model."""
-        # Simplified implementation - see grpo_simple.py for full version
         scores = []
         for prompt in prompts:
             try:
                 resp = self._client.responses.create(
                     model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
+                    input=prompt,
                     reasoning={"effort": "medium"},
                     text={"verbosity": "low"},
-                    max_completion_tokens=64,
                 )
-                content = resp.choices[0].message.content or ""
-                # Parse score from response
-                score = float(re.search(r"(\d+(?:\.\d+)?)", content).group(1))
-                scores.append(min(1.0, score / 10.0))
+                content = self._extract_response_text(resp)
+                scores.append(self._parse_score(content))
             except Exception as e:
                 print(f"Judge error: {e}")
                 scores.append(0.0)
         return scores
+
+    @staticmethod
+    def _extract_response_text(resp: Any) -> str:
+        text = getattr(resp, "output_text", None)
+        if text:
+            return text
+        outputs = getattr(resp, "output", None)
+        if not outputs:
+            return ""
+        parts: List[str] = []
+        for item in outputs:
+            for content in getattr(item, "content", []) or []:
+                segment = getattr(content, "text", None)
+                if segment:
+                    parts.append(getattr(segment, "value", ""))
+        return "\n".join(parts)
+
+    @staticmethod
+    def _parse_score(text: str) -> float:
+        t = text.strip()
+        if not t:
+            return 0.0
+        try:
+            obj = json.loads(t)
+            if isinstance(obj, dict) and "score" in obj:
+                val = float(obj["score"])
+                return float(np.clip(val, 0.0, 1.0))
+        except Exception:
+            pass
+        match = re.search(r"[-+]?\d*\.?\d+", t)
+        if not match:
+            return 0.0
+        val = float(match.group(0))
+        if val > 10:
+            val /= 100.0
+        elif val > 1:
+            val /= 10.0
+        return float(np.clip(val, 0.0, 1.0))
 
 
 # -----------------------------
@@ -536,7 +570,6 @@ def train_stage1(args):
 
     print(f"Training on {len(train_dataset)} samples")
     
-    print(f"Sample 0:\nPrompt:\n{train_dataset[0]}")
 
     # Training arguments
     output_dir = os.path.join(args.output_dir, "stage1")
@@ -698,6 +731,9 @@ def train_stage3(args, stage2_checkpoint: Optional[str] = None):
         raise RuntimeError("No training samples found")
 
     print(f"Training on {len(train_dataset)} samples")
+    
+    print(f"Sample 0:\nPrompt:\n{train_dataset[0]}")
+
 
     # Setup judge
     judge = JudgeClient(
