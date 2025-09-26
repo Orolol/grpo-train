@@ -705,7 +705,7 @@ def train_stage3(args, stage2_checkpoint: Optional[str] = None):
         logging_steps=1,
         auto_find_batch_size=True,
         gradient_accumulation_steps=8,
-        num_generations=1,
+        num_generations=4,
         max_prompt_length=2048,
         max_completion_length=512,
         num_train_epochs=args.epochs,
@@ -814,7 +814,7 @@ def main():
 
     # Judge (for Stage 3)
     parser.add_argument("--use_judge", action="store_true")
-    parser.add_argument("--judge_model", type=str, default="gpt-4o-mini")
+    parser.add_argument("--judge_model", type=str, default="gpt-5-mini")
     parser.add_argument("--judge_base_url", type=str,
                        default=os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1"))
     parser.add_argument("--judge_api_key", type=str,
