@@ -436,7 +436,6 @@ class JudgeClient:
                 resp = self._client.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
-                    temperature=0.0,
                     max_completion_tokens=64,
                 )
                 content = resp.choices[0].message.content or "0"
