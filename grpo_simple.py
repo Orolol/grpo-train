@@ -368,21 +368,24 @@ def build_model_tokenizer(
 
     PatchFastRL("GRPO", FastLanguageModel)
     model, tokenizer = FastLanguageModel.from_pretrained(
-        dtype=None,
         model_name=base_model,
         max_seq_length=max_seq_length,
         load_in_4bit=load_in_4bit,
         fast_inference=bool(enable_vllm),
         gpu_memory_utilization=gpu_memory_utilization,
+        full_finetuning=False,
+        
         # unsloth_vllm_standby=True,
     )
+    
+    print(model)
+    
     model = FastLanguageModel.get_peft_model(
         model,
         r=lora_rank,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        lora_alpha=16,
-        # Native checkpointing avoids flex-attention backward failures on GPT-OSS 20B
-        use_gradient_checkpointing=True,
+        lora_alpha=lora_rank,
+        use_gradient_checkpointing = "unsloth",
         lora_dropout=0,
         random_state=3407,
     )
@@ -519,7 +522,7 @@ def main() -> None:
     parser.add_argument("--output_dir", type=str, default="output")
     parser.add_argument("--max_seq_length", type=int, default=6000)
     parser.add_argument("--lora_rank", type=int, default=32)
-    parser.add_argument("--load_in_4bit", action="store_true")
+    parser.add_argument("--load_in_4bit", action="store_true", default=True)
     parser.add_argument("--max_completion_length", type=int, default=2048)
 
     # Training
