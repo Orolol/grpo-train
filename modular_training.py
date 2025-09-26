@@ -426,8 +426,9 @@ def build_model_tokenizer(
         # Stage 3 uses GRPO
         PatchFastRL("GRPO", FastLanguageModel)
 
-    # Load from checkpoint if continuing from previous stage
-    model_path = checkpoint_dir if checkpoint_dir and os.path.exists(checkpoint_dir) else base_model
+    # Determine if we're loading from checkpoint or base model
+    is_checkpoint = checkpoint_dir and os.path.exists(checkpoint_dir)
+    model_path = checkpoint_dir if is_checkpoint else base_model
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         dtype=None,
@@ -436,16 +437,20 @@ def build_model_tokenizer(
         load_in_4bit=load_in_4bit,
     )
 
-    # Add LoRA adapters
-    model = FastLanguageModel.get_peft_model(
-        model,
-        r=lora_rank,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        lora_alpha=16,
-        use_gradient_checkpointing=True,
-        lora_dropout=0,
-        random_state=3407,
-    )
+    # Only add LoRA adapters if we're loading from base model (not checkpoint)
+    if not is_checkpoint:
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r=lora_rank,
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+            lora_alpha=16,
+            use_gradient_checkpointing=True,
+            lora_dropout=0,
+            random_state=3407,
+        )
+    else:
+        # If loading from checkpoint, enable training
+        FastLanguageModel.for_training(model)
 
     return model, tokenizer
 
@@ -492,7 +497,7 @@ def train_stage1(args):
         learning_rate=args.learning_rate,
         fp16=not args.load_in_4bit,
         bf16=args.load_in_4bit,
-        logging_steps=10,
+        logging_steps=1,
         save_strategy="epoch",
         save_total_limit=2,
         report_to="none",
@@ -788,7 +793,7 @@ def main():
     parser.add_argument("--load_in_4bit", action="store_true")
 
     # Training
-    parser.add_argument("--epochs", type=int, default=3)
+    parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--learning_rate", type=float, default=2e-4)
 
     # Judge (for Stage 3)
