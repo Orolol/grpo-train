@@ -556,6 +556,8 @@ def train_stage1(args):
         stage=1,
         checkpoint_dir=None,
     )
+    
+    evaluate_diffs_with_judge(model, tokenizer, args, stage_label="Stage 0 - Initial")
 
     # Build dataset
     print("Building Stage 1 dataset...")
@@ -885,7 +887,7 @@ def evaluate_diffs_with_judge(
 
         outputs = model.generate(
             **inputs,
-            max_new_tokens=512,
+            max_new_tokens=1024,
             temperature=0.7,
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id,

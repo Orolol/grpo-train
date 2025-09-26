@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Juri xmlns="http://www.els.fr/ns/juri" uniqueDecisionId="ge7d7540b-f0df-4aac-918f-115df22a2aec"
+      cle="courdappel_aixenprovence_20120626_11barreoblique03360">
+    <MetaJuri>
+        <DecisionTraitee>
+            <Juridiction>Cour d'appel</Juridiction>
+            <Nature>Arrêt au fond</Nature>
+            <Lieu>Aix-en-Provence</Lieu>
+            <Date>2012-06-26</Date>
+            <Formation>ch. 06 B</Formation>
+            <NumerosJuri>
+                <Numero>11/03360</Numero>
+            </NumerosJuri>
+        </DecisionTraitee>
+        <DecisionDeferee uniqueDecisionIdRef="ga321324d-ba5f-47ae-af6f-26ae2cdf00c9">
+            <Juridiction>Tribunal de grande instance</Juridiction>
+            <Nature>Jugement</Nature>
+            <Lieu>Toulon</Lieu>
+            <Date>2010-11-17</Date>
+            <Formation>Juge aux Affaires Familiales</Formation>
+            <NumerosJuri>
+                <Numero>09/00670</Numero>
+            </NumerosJuri>
+        </DecisionDeferee>
+        <Avocats>
+            <Avocat>SCP ERMENEUX CHAMPLY - LEVAIQUE</Avocat>
+            <Avocat>Me Pierric MATHIEU</Avocat>
+            <Avocat>SCP Maynard SIMONI</Avocat>
+        </Avocats>
+        <CompositionCour>
+            <President>Jean-pierre CHAMPRENAULT</President>
+            <Conseiller>Dominique KLOTZ</Conseiller>
+            <Greffier>Marie-sol ROBINET</Greffier>
+        </CompositionCour>
+        <GroupeFondTextes>
+            <FondTextes>
+                <Nature/>
+            </FondTextes>
+        </GroupeFondTextes>
+    </MetaJuri>
+    <MetaFlux>
+        <Source>
+            <Id>20120627_030515_9597_CA_AIXENPROVENCE</Id>
+            <Origine>CASS_CAPP</Origine>
+            <DateExtraction>2016-02-28T10:27:22</DateExtraction>
+            <URL hote="CASS_CAPP">00/00/00/Z2/J4/</URL>
+            <URLEJP>00/00/00/Z2/J4/20120627_030515_9597_CA_AIXENPROVENCE.pdf.final.xml</URLEJP>
+        </Source>
+        <Document>
+            <Cle>
+                courdappel_aixenprovence_20120626_11barreoblique03360_arretaufond_casscapp_20120627_030515_9597_CA_AIXENPROVENCE_nouveau
+            </Cle>
+            <Dates>
+                <Creation>2016-02-28T10:27:22</Creation>
+                <Modification>2016-02-28T10:27:22</Modification>
+            </Dates>
+            <Etat>Nouveau</Etat>
+            <Qualification>Valide</Qualification>
+            <URLEJP>00/00/00/Z2/J4/00/00/00/Z2/J4/20120627_030515_9597_CA_AIXENPROVENCE.pdf.final.xml</URLEJP>
+        </Document>
+    </MetaFlux>
+    <TexteJuri>
+        <NonStructure>
+            <P>COUR D'APPEL D'AIX EN PROVENCE</P>
+            <P>6e Chambre B</P>
+            <P>ARRÊT AU FOND</P>
+            <P>DU 26 JUIN 2012</P>
+            <P>N°2012/616</P>
+            <P>Rôle N° 11/03360</P>
+            <P>Jovanka KALUDJEROVIC épouse CORCE
+            </P>
+            <P>C/</P>
+            <P>Jean-Marie CORCE
+            </P>
+            <P>Grosse délivrée le :</P>
+            <P>à :la SCP MAYNARD - SIMONI la SCP ERMENEUX CHAMPLY-LEVAIQUE</P>
+            <P>Décision déférée à la Cour :</P>
+            <P>Jugement du Juge aux affaires familiales de TOULON en date du 17 Novembre 2010 enregistré au répertoire
+                général sous le n° 09/00670.
+            </P>
+            <P>APPELANTE</P>
+            <P>Madame Jovanka KALUDJEROVIC épouse CORCE
+            </P>
+            <P>née le 27 Juillet 1961 à BELGRADE (EX YOUGOSLAVIE) de nationalité Française, demeurant 1312 Chemin de la
+                Peguière - 83740 LA CADIERE D'AZUR représentée par la SCP MAYNARD SIMONI, avocats postulants et
+                plaidants au barreau D'AIX-EN-PROVENCE
+            </P>
+            <P>INTIME</P>
+            <P>Monsieur Jean-Marie CORCE
+            </P>
+            <P>né le 12 Août 1966 à LA CIOTAT (13600), demeurant Villa Les Chênes - Chemin du Pareyraou - 13600 LA
+                CIOTAT représenté par la SCP ERMENEUX-CHAMPLY - LEVAIQUE, avocats postulants au barreau
+                d'AIX-EN-PROVENCE, assisté de Me Pierric MATHIEU, avocat plaidant au barreau de TOULON
+            </P>
+            <P>*-*-*-*-*</P>
+            <P>COMPOSITION DE LA COUR</P>
+            <P>En application des dispositions des articles 785, 786 et 910 du Code de Procédure Civile, l'affaire a été
+                débattue le 24 Mai 2012, en Chambre du Conseil, les avocats ne s'y étant pas opposés, devant Monsieur
+                Jean-Pierre CHAMPRENAULT, Président, et Madame Dominique KLOTZ, Conseiller, chargés du rapport.
+            </P>
+            <P>Madame Dominique KLOTZ, Conseiller, a fait un rapport oral à l'audience, avant les plaidoiries.</P>
+            <P>Ces magistrats ont rendu compte des plaidoiries dans le délibéré de la Cour, composée de :</P>
+            <P>Madame Dominique KLOTZ, Conseiller</P>
+            <P>M. Jean-Jacques BAUDINO,</P>
+            <P>Monsieur Alain VOGELWEITH, Conseiller</P>
+            <P>Greffier lors des débats : Madame Marie-Sol ROBINET.</P>
+            <P>Les parties ont été avisées que le prononcé public de la décision aurait lieu par mise à disposition au
+                greffe le 26 Juin 2012.
+            </P>
+            <P>ARRÊT</P>
+            <P>Contradictoire,</P>
+            <P>Prononcé par mise à disposition au greffe le 26 Juin 2012.</P>
+            <P>Signé par Madame Dominique KLOTZ, Conseiller et Madame Marie-Sol ROBINET, Greffier auquel la minute de la
+                décision a été remise par le magistrat signataire.
+            </P>
+            <P>EXPOSE DU LITIGE</P>
+            <P>Jovanka KALUDJEROVIC et Jean-Marie CORCE se sont mariés le 14/10/1989 à La Ciotat -13- sous le régime de
+                la séparation de biens.
+            </P>
+            <P>De leur union sont nés deux enfants :</P>
+            <P>- Sandra le 28/05/1991</P>
+            <P>- Elodie le 22/02/1999</P>
+            <P>Saisi par Jean-Marie CORCE le 04/02/2009 et par Jovanka KALUDJEROVIC le 05/02/2009 le juge aux affaires
+                familiales de Toulon par ordonnance de non -conciliation en date du 06/05/2009 a attribué à l'épouse la
+                jouissance du domicile conjugal à titre gratuit au titre du devoir de secours , chacun des époux devant
+                assumer pour moitié le remboursement des crédits immobiliers et a dit que les loyers produits par le
+                bien immobilier sis à La Ciotat seraient partagés par moitié entre les époux après déduction des charges
+                afférentes.
+            </P>
+            <P>L'autorité parentale sur l'enfant Elodie a été déclarée conjointe avec résidence chez sa mère et droit
+            </P>
+            <P>de visite et d'hébergement pour le père.</P>
+            <P>Une part contributive de 275 euros par mois et par enfant a été mise à la charge du père.</P>
+            <P>Jean-Marie CORCE a assigné Jovanka KALUDJEROVIC en divorce le 02/07/2009 sur le fondement de l'article
+                242 du code civil.
+            </P>
+            <P>Il a sollicité la reconduction des mesures provisoires concernant les enfants et la désignation d'un
+                notaire en vue d'élaborer un projet de liquidation.
+            </P>
+            <P>Jovanka KALUDJEROVIC a demandé reconventionnellement le divorce aux torts exclusifs de l'époux.</P>
+            <P>Elle a sollicité une prestation compensatoire de 150 000 euros et une somme de 20 000 euros à titre de
+                dommages -intérêts sur l'article 266 du code civil.
+            </P>
+            <P>Elle a demandé la modification du droit de visite et d'hébergement du père sur Elodie et l'augmentation à
+                la somme de 400 euros par mois et par enfant de la part contributive de ce dernier.
+            </P>
+            <P>Dans ses dernières conclusions devant le premier juge Jean-Marie CORCE s'est opposé aux demandes de
+                Jovanka KALUDJEROVIC .
+            </P>
+            <P>Par jugement du 17/11/2010 le Tribunal de Grande Instance de Toulon a prononcé le divorce aux torts
+                exclusifs de l'époux , ordonné la liquidation et le partage des intérêts patrimoniaux des parties ,
+                confié l'exercice de l'autorité parentale sur Elodie aux deux parents avec résidence chez la mère ,
+                droit de visite et d'hébergement pour le père et fixation à la somme de 275 euros par mois et par enfant
+                de la part contributive de ce dernier.
+            </P>
+            <P>Jean-Marie CORCE a été condamné à payer à Jovanka KALUDJEROVIC une prestation compensatoire de 50 000
+                euros et une somme de 3000 euros à titre de dommages -intérêts.
+            </P>
+            <P>Jovanka KALUDJEROVIC a interjeté appel du jugement le 23/02/2011.</P>
+            <P>Par conclusions du 15/05/2012 elle demande que Jean-Marie CORCE soit condamné à lui payer une somme de 20
+                000 euros à titre de dommages -intérêts , une prestation compensatoire de 150 000 euros et une part
+                contributive de 400 euros par mois et par enfant.
+            </P>
+            <P>Pour le surplus elle demande confirmation du jugement.</P>
+            <P>Elle réclame une somme de 3000 euros au titre de l'article 700 du code de procédure civile.</P>
+            <P>Sur le prononcé du divorce elle conteste les griefs de violence et d'adultère que lui impute Jean-Marie
+                CORCE et maintient que ce dernier s'est rendu coupable de relations adultères et d'abandon du domicile
+                conjugal durant le mariage.
+            </P>
+            <P>Sur les dommages -intérêts elle considère avoir subi un préjudice considérable du fait du départ de
+                l'époux après 20 ans de vie commune pour rejoindre sa maîtresse.
+            </P>
+            <P>Sur la prestation compensatoire elle expose que le montant modeste de ses revenus mensuels en comparaison
+                de ceux de l'époux policier municipal et pompier volontaire et la différence de patrimoine entre les
+                époux outre la durée du mariage et son état de santé fondent sa demande.
+            </P>
+            <P>Elle conteste le fait que l'enfant Elodie vive chez son père et pour l'enfant Sandra elle suggère que la
+                contribution du père soit versée directement entre les mains de l'enfant majeure qui a un domicile
+            </P>
+            <P>propre.</P>
+            <P>Par conclusions du 22/05/2012 Jean-Marie CORCE demande réformation du jugement déféré.</P>
+            <P>Il demande que le divorce soit prononcé aux torts exclusifs de l'épouse .</P>
+            <P>Il sollicite que les mesures concernant Elodie soient maintenues en l'absence de modification dans la
+                situation des parents et de la mineure sauf à modifier le jour et l'heure de sa prise en charge à savoir
+                le samedi matin à 9 heures.
+            </P>
+            <P>Sandra , majeure , n'étant plus à la charge de sa mère il considère qu'il n'y a plus lieu à paiement de
+                part contributive à la mère pour cette enfante.
+            </P>
+            <P>Il s'oppose à toutes les demandes de Jovanka KALUDJEROVIC et réclame une somme de 3000 euros au titre de
+                l'article 700 du code de procédure civile.
+            </P>
+            <P>Il reproche à Jovanka KALUDJEROVIC des faits de violences et d'adultère.</P>
+            <P>Il indique avoir rencontré sa nouvelle compagne après sa séparation d'avec Jovanka KALUDJEROVIC .</P>
+            <P>A tout le moins il soutient que le divorce devra être prononcé aux torts partagés.</P>
+            <P>Il indique qu'il verse la part contributive à sa charge pour Sandra directement à cette dernière et qu'il
+                s'est porté caution de son appartement.
+            </P>
+            <P>Sur les dommages -intérêts il allègue que la dissolution du mariage n'est en rien à l'origine de
+                l'invalidité de Jovanka KALUDJEROVIC sur laquelle cette dernière fonde sa demande sur ce point selon
+                lui.
+            </P>
+            <P>Il ajoute que l'adultère prétendu ne peut servir de fondement à l'application de l'article 266 du code
+                civil.
+            </P>
+            <P>Sur la prestation compensatoire il précise que ses revenus ne lui permettent pas de régler une prestation
+                compensatoire , que Jovanka KALUDJEROVIC est taisante sur ses revenus actuels et qu'en ce qui le
+                concerne il ne bénéficiera que d'une retraite minime.
+            </P>
+            <P>Il rappelle qu'à l'issue des opérations de liquidation de la communauté l'épouse percevra 200 000
+                euros.
+            </P>
+            <P>L'ordonnance de clôture est intervenue le 24/05/2012.</P>
+            <P>MOTIFS DE LA DECISION</P>
+            <P>L'appel régulièrement formé sera déclaré recevable</P>
+            <P>Sur le prononcé du divorce</P>
+            <P>Le divorce peut être demandé par l'un des époux lorsque des faits constitutifs d'une violation grave et
+                renouvelée des devoirs et obligations du mariage sont imputables à son conjoint et rendent intolérable
+                le maintien de la vie commune.
+            </P>
+            <P>Jean-Marie CORCE fonde sa demande en divorce sur des faits de violence et d'adultère de Jovanka
+                KALUDJEROVIC .
+            </P>
+            <P>En ce qui concerne les faits de violence qui se seraient produits en janvier 2009 il verse à leur
+                soutient une déclaration de main courante qui ne fait que reprendre ses propres déclarations et un
+                certificat médical et des photographies de lésions qui ne permettent pas d'en attribuer l'origine à
+                Jovanka KALUDJEROVIC .
+            </P>
+            <P>En ce qui concerne les faits d'adultère évoqués ils ne sont soutenus que par des attestations de membres
+                de sa famille qui auraient vu Jovanka KALUDJEROVIC en compagnie d'un homme en décembre 2009 étant
+                précisé que l'assignation en divorce est en date du 02/07/2009 et l'ordonnance de non -conciliation en
+                date du 06/05/2009.
+            </P>
+            <P>Ces faits à les supposer établis ne peuvent en conséquence constituer une violation grave et renouvelée
+                des devoirs et obligations du mariage rendant intolérable le maintien de la vie commune qui avait déjà
+                disparu en l'espèce.
+            </P>
+            <P>Jean-Marie CORCE sera sur ces motifs débouté de sa demande en divorce pour faute.</P>
+            <P>Jovanka KALUDJEROVIC fonde sa demande en divorce sur des faits d'adultère et d'abandon du domicile
+                conjugal du mari.
+            </P>
+            <P>En ce qui concerne les faits d'abandon du domicile conjugal ils sont établis par un procès-verbal de
+                constat d'huissier en date du 15/12/2008.
+            </P>
+            <P>En ce qui concerne les faits d'adultère ils sont régulièrement attestés par Fabienne VUCANOVIC
+                BERNARD ,Lucile CRISTOFARI , Lalia LABBACI et Nicolas BERTIN.
+            </P>
+            <P>Une photographie de la boîte aux lettres du domicile de Jean-Marie CORCE sur laquelle figure son nom et
+                celui de madame BROUSSARD illustre par ailleurs cet état de fait.
+            </P>
+            <P>Jovanka KALUDJEROVIC démontre ainsi des violations graves et renouvelées des devoirs et obligations du
+                mariage imputables à son conjoint rendant intolérable le maintien de la vie commune qui fondent sa
+                demande en divorce pour faute.
+            </P>
+            <P>Le jugement déféré qui a prononcé le divorce aux torts exclusifs du mari sera sur ces motifs confirmé.
+            </P>
+            <P>Sur la prestation compensatoire</P>
+            <P>Le juge pour apprécier la nécessité d'une prestation compensatoire doit rechercher si la rupture du
+                mariage crée une disparité dans les conditions de vie respectives des parties.
+            </P>
+            <P>Cette prestation dont la nécessité doit être appréciée en considération des critères prévus à l'article
+                271 du code civil a pour but de compenser autant que possible cette disparité.
+            </P>
+            <P>Elle est fixée selon les besoins de l'époux à qui elle est versée et les ressources de l'autre en tenant
+                compte de la situation au moment du divorce et de l'évolution dans un avenir prévisible.
+            </P>
+            <P>A cet effet le juge prend en considération notamment :</P>
+            <P>-la durée du mariage</P>
+            <P>-l'âge et l'état de santé des époux</P>
+            <P>-leur qualification professionnelle et leur situation professionnelle</P>
+            <P>-les conséquences des choix professionnels faits par l'un des époux pendant la vie commune pour
+                l'éducation des enfants et du temps qu'il faudra encore y consacrer ou pour favoriser la carrière de son
+                conjoint au détriment de la sienne
+            </P>
+            <P>-le patrimoine estimé ou prévisible des époux tant en capital qu'en revenu après liquidation du régime
+                matrimonial
+            </P>
+            <P>-leurs droits existants et prévisibles</P>
+            <P>-leur situation respective en matière de pension de retraite</P>
+            <P>La prestation compensatoire n'est pas destinée à égaliser les fortunes ni à corriger les conséquences du
+                régime matrimonial adopté par les époux.
+            </P>
+            <P>Elle n'a pas vocation à égaliser les situations des époux après le divorce , mais seulement à compenser
+                les disparités causées par le divorce , générées par la rupture du mariage.
+            </P>
+            <P>Elle ne peut compenser une disparité préexistante au mariage dés lors que le mariage n'a eu aucune
+                incidence sur les situations patrimoniales respectives.
+            </P>
+            <P>Jovanka KALUDJEROVIC est âgéé de 50 ans et Jean-Marie CORCE de 45 ans.</P>
+            <P>Jovanka KALUDJEROVIC fait état de difficultés de santé ayant conduit à son placement en invalidité en
+                2007.
+            </P>
+            <P>La vie maritale a duré 21ans et les époux ont eu deux enfants.</P>
+            <P>Aucun des époux n'a sacrifié sa carrière professionnelle pour l'éducation des enfants ou la carrière de
+                son conjoint.
+            </P>
+            <P>Actuellement Jovanka KALUDJEROVIC perçoit une pension d'invalidité de l'ordre de 800 euros mensuels
+                complétée jusqu'à l'âge de sa retraite par une indemnité de 325 euros mensuels versée par sa mutuelle.
+                Elle réside à titre gratuit au domicile conjugal.
+            </P>
+            <P>Jean-Marie CORCE perçoit des revenus de l'ordre de 3070 euros composés de son salaire de policier
+                municipal et de vacations de pompier volontaire .Il est hébergé par sa compagne.
+            </P>
+            <P>Chacun des époux supporte des charges courantes.</P>
+            <P>Les époux étaient propriétaires indivis à raison de moitié chacun d'un appartement à La Ciotat avec cave
+                et parking vendu 165 000 euros et dont ils se sont répartis le prix de vente.
+            </P>
+            <P>Ils sont également propriétaires indivis à raison de 3/4 pour Jean-Marie CORCE et 1/4 pour Jovanka
+                KALUDJEROVIC d'une maison sise à La Cadière -83- évaluée à 450 000 euros sur laquelle subsisterait un
+                capital restant du de 10 000 euros.
+            </P>
+            <P>Jean-Marie CORCE dispose aussi d'un patrimoine propre constitué de la nue - propriété d'un appartement de
+                type 2 à La Ciotat et de la moitié indivise de la nue propriété d'un studio à ALLOS -06.
+            </P>
+            <P>Aucun des époux ne justifie avec précision de ses droits à pension de retraite qui seront en tout état de
+                cause supérieurs pour l'époux eu égard à son salaire et à sa durée de cotisation.
+            </P>
+            <P>Il résulte de ces éléments que la rupture du mariage va créer une disparité au détriment de l'épouse dans
+                les conditions de vie respectives des parties en particulier eu égard à leurs qualifications
+                professionnelles et revenus et à la situation de santé de l'épouse qui a été justement évaluée par le
+                premier juge à la somme de 50 000 euros.
+            </P>
+            <P>Le jugement déféré qui a condamné Jean-Marie CORCE à payer à Jovanka KALUDJEROVIC</P>
+            <P>une prestation compensatoire de 50 000 euros sera sur ces motifs confirmé.</P>
+            <P>Sur les dommages -intérêts</P>
+            <P>Jovanka KALUDJEROVIC qui fonde sa demande en dommages -intérêts sur l'article 266 du code civil ne
+                justifie pas subir de conséquences d'une particulière gravité du fait de la dissolution du mariage , au
+                delà des effets de toute rupture de vie commune.
+            </P>
+            <P>Elle est en effet restée vivre dans la villa qui constituait le domicile conjugal avec sa fille mineure
+                .
+            </P>
+            <P>Elle sera sur ces motifs déboutée de sa demande à cette fin et le jugement déféré sera infirmé sur ce
+                point.
+            </P>
+            <P>Sur les effets du divorce concernant les enfants</P>
+            <P>Il n'est pas discuté par les parties que Sandra , majeure , n'est plus à la charge de sa mère.</P>
+            <P>Il appartiendra à cette dernière si elle le souhaite et si cela s'avère nécessaire de faire une demande
+                alimentaire à ses parents.
+            </P>
+            <P>En ce qui concerne Elodie , agéé de 13 ans , les dispositions du jugement déféré la concernant seront
+                confirmées aucune des parties ne démontrant qu'il serait de l'intérêt de l'enfant de les voir modifier.
+            </P>
+            <P>La part contributive du père sera à l'identique maintenue au niveau fixé au jugement eu égard aux
+                ressources et charges respectives des parents reprises ci-dessus en considération des besoins d'un
+                enfant de son age.
+            </P>
+            <P>Les autres dispositions du jugement dont appel ne sont pas discutées.</P>
+            <P>L'équité ne commande pas d'allouer de sommes au titre de l'article 700 du code de procédure civile.</P>
+            <P>Chaque partie conservera la charge des dépens qu'elle a exposés.</P>
+            <P>PAR CES MOTIFS</P>
+            <P>La Cour</P>
+            <P>Statuant publiquement, contradictoirement , après débats non publics</P>
+            <P>Reçoit l'appel</P>
+            <P>Infirme le jugement déféré sur les dommages -intérêts alloués à l'épouse et sur la part contributive du
+                père pour l'enfant Sandra majeure et statuant à nouveau :
+            </P>
+            <P>Dit n'y avoir lieu à dommages -intérêts et déboute Jovanka KALUDJEROVIC de sa demande à cette fin.</P>
+            <P>Dit n'y avoir lieu à paiement par Jean-Marie CORCE d'une part contributive à Jovanka</P>
+            <P>
+                KALUDJEROVIC pour l'entretien et l'éducation de l'enfant Sandra majeure.
+            </P>
+            <P>Confirme le jugement déféré en toutes ses autres dispositions.</P>
+            <P>Dit n'y avoir lieu à l'application de l'article 700 du code de procédure civile</P>
+            <P>Laisse chaque partie supporter la charge des dépens qu'elle a exposés.</P>
+            <P>Le Greffier, Le Président,</P>
+        </NonStructure>
+    </TexteJuri>
+</Juri>
