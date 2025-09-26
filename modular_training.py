@@ -279,8 +279,6 @@ STAGE2_OUTPUT_FORMAT = """
 def build_stage2_dataset(
     xml_dir: str,
     rules_text: str,
-    stage1_model,
-    tokenizer,
     max_samples: Optional[int] = None,
 ) -> Dataset:
     """Build dataset for Stage 2: Rule Application."""
@@ -291,23 +289,37 @@ def build_stage2_dataset(
             xml = read_file(fp)
             section = extract_relevant_section(xml)
 
-            # First get entity detection from Stage 1 model
-            stage1_prompt = STAGE1_TEMPLATE.format(text=section)
-            inputs = tokenizer(stage1_prompt, return_tensors="pt", truncation=True, max_length=2048)
+            # Extract entities using rule-based approach (not model)
+            entities = extract_entities_from_xml(section)
 
-            if torch.cuda.is_available():
-                inputs = {k: v.cuda() for k, v in inputs.items()}
+            # Format entities into markdown for Stage 2 input
+            entities_lines = []
+            names = [e for e in entities if e[1] == "nom"]
+            addrs = [e for e in entities if e[1] == "adresse"]
+            dates = [e for e in entities if e[1] == "date"]
+            phones = [e for e in entities if e[1] == "telephone"]
 
-            with torch.no_grad():
-                outputs = stage1_model.generate(
-                    **inputs,
-                    max_new_tokens=512,
-                    temperature=0.1,
-                    do_sample=False,
-                    pad_token_id=tokenizer.eos_token_id,
-                )
+            if names:
+                entities_lines.append("## Personnes")
+                for name, _ in names[:5]:
+                    entities_lines.append(f"- {name} (nom complet)")
 
-            entities_detected = tokenizer.decode(outputs[0][len(inputs["input_ids"][0]):], skip_special_tokens=True)
+            if addrs:
+                entities_lines.append("\n## Adresses")
+                for addr, _ in addrs[:3]:
+                    entities_lines.append(f"- {addr}")
+
+            if dates:
+                entities_lines.append("\n## Dates personnelles")
+                for date, _ in dates[:3]:
+                    entities_lines.append(f"- {date} (date)")
+
+            if phones:
+                entities_lines.append("\n## Contacts")
+                for phone, _ in phones[:3]:
+                    entities_lines.append(f"- {phone} (téléphone)")
+
+            entities_detected = "\n".join(entities_lines) if entities_lines else "Aucune entité détectée."
 
             # Build Stage 2 prompt
             prompt = STAGE2_TEMPLATE.format(
@@ -317,13 +329,9 @@ def build_stage2_dataset(
             )
 
             # Generate expected transformations based on rules
-            # This is simplified - in production you'd use the teacher model
-            entities = extract_entities_from_xml(section)
-
             output_lines = ["## Transformations"]
 
             # Apply rules to generate transformations
-            names = [e for e in entities if e[1] == "nom"]
             if names:
                 output_lines.append("\n### Noms")
                 for name, _ in names[:5]:
@@ -332,19 +340,29 @@ def build_stage2_dataset(
                         initials = f"{parts[0][0]}. {parts[-1][0]}."
                         output_lines.append(f'- "{name}" → "{initials}"')
 
-            addrs = [e for e in entities if e[1] == "adresse"]
             if addrs:
                 output_lines.append("\n### Adresses")
                 for i, (addr, _) in enumerate(addrs[:3], 1):
                     output_lines.append(f'- "{addr}" → "[Adresse {i}]"')
 
-            response = "\n".join(output_lines)
+            if dates:
+                output_lines.append("\n### Dates")
+                for i, (date, _) in enumerate(dates[:3], 1):
+                    output_lines.append(f'- "{date}" → "[Date {i}]"')
 
-            rows.append({
-                "prompt": prompt,
-                "response": response,
-                "text": prompt + "\n" + response
-            })
+            if phones:
+                output_lines.append("\n### Contacts")
+                for i, (phone, _) in enumerate(phones[:3], 1):
+                    output_lines.append(f'- "{phone}" → "[Téléphone {i}]"')
+
+            # Only create training sample if we have transformations
+            if len(output_lines) > 1:
+                response = "\n".join(output_lines)
+                rows.append({
+                    "prompt": prompt,
+                    "response": response,
+                    "text": prompt + "\n" + response
+                })
 
             if max_samples and len(rows) >= max_samples:
                 break
@@ -546,13 +564,11 @@ def train_stage2(args, stage1_checkpoint: Optional[str] = None):
     # Load rules
     rules_text = read_file(args.rules_path)
 
-    # Build dataset (needs Stage 1 model for entity detection)
+    # Build dataset (using rule-based entity extraction)
     print("Building Stage 2 dataset...")
     train_dataset = build_stage2_dataset(
         xml_dir=args.train_dir,
         rules_text=rules_text,
-        stage1_model=model,  # Use current model for entity detection
-        tokenizer=tokenizer,
         max_samples=args.max_samples,
     )
 
