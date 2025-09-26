@@ -414,7 +414,7 @@ class JudgeClient:
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.0,
-                    max_tokens=64,
+                    max_completion_tokens=64,
                 )
                 content = resp.choices[0].message.content or "0"
                 # Parse score from response
@@ -541,6 +541,8 @@ def train_stage1(args):
     tokenizer.save_pretrained(output_dir)
     print(f"Stage 1 model saved to {output_dir}")
 
+    evaluate_diffs_with_judge(model, tokenizer, args, stage_label="Stage 1")
+
     return output_dir
 
 
@@ -613,6 +615,8 @@ def train_stage2(args, stage1_checkpoint: Optional[str] = None):
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
     print(f"Stage 2 model saved to {output_dir}")
+
+    evaluate_diffs_with_judge(model, tokenizer, args, stage_label="Stage 2")
 
     return output_dir
 
@@ -731,6 +735,8 @@ def train_stage3(args, stage2_checkpoint: Optional[str] = None):
     tokenizer.save_pretrained(output_dir)
     print(f"Stage 3 model saved to {output_dir}")
 
+    evaluate_diffs_with_judge(model, tokenizer, args, stage_label="Stage 3")
+
     return output_dir
 
 
@@ -739,33 +745,55 @@ def train_stage3(args, stage2_checkpoint: Optional[str] = None):
 # -----------------------------
 
 @torch.no_grad()
-def evaluate_model(model, tokenizer, test_dir: str, stage: int, max_samples: int = 10):
-    """Evaluate model on test set."""
+def evaluate_diffs_with_judge(
+    model,
+    tokenizer,
+    args,
+    stage_label: str,
+) -> None:
+    """Generate anonymisation diffs on test XMLs and score them with the judge."""
+
+    test_files = list_xml_files(args.test_dir)
+    if not test_files:
+        print(f"[{stage_label}] Aucun fichier de test trouvé dans {args.test_dir}, évaluation sautée.")
+        return
+
+    rules_text = read_file(args.rules_path)
+    judge_template = ""
+    judge: Optional[JudgeClient] = None
+    judge_enabled = bool(args.judge_api_key and os.path.exists(args.judge_prompt))
+
+    if judge_enabled:
+        try:
+            judge_template = read_file(args.judge_prompt)
+            judge = JudgeClient(
+                base_url=args.judge_base_url,
+                api_key=args.judge_api_key,
+                model=args.judge_model,
+            )
+        except Exception as exc:
+            print(f"[{stage_label}] Impossible d'initialiser le juge ({exc}), scores non disponibles.")
+            judge_enabled = False
+    else:
+        print(f"[{stage_label}] Juge indisponible - vérifier la clé API ou le prompt (skipping judge scoring).")
+
+    model_was_training = model.training
     model.eval()
 
-    test_files = list_xml_files(test_dir)[:max_samples]
+    eval_samples = args.eval_samples or len(test_files)
+    selected_files = test_files[:eval_samples]
 
-    for fp in test_files:
-        print(f"\nEvaluating on {os.path.basename(fp)}")
+    generated_records: List[Tuple[str, str, str]] = []  # (filename, completion, context_text)
+    sample_diff_printed = False
 
+    for fp in selected_files:
         xml = read_file(fp)
         section = extract_relevant_section(xml)
+        context = section[:2000]
 
-        # Create appropriate prompt based on stage
-        if stage == 1:
-            prompt = STAGE1_TEMPLATE.format(text=section[:1500])
-        elif stage == 2:
-            # For Stage 2, we'd need Stage 1 output first
-            prompt = STAGE1_TEMPLATE.format(text=section[:1500])
-            # Get Stage 1 output first...
-        else:  # Stage 3
-            prompt = STAGE3_TEMPLATE.format(
-                rules="[Rules truncated]",
-                text=section[:1500]
-            )
+        prompt = STAGE3_TEMPLATE.format(rules=rules_text, text=context)
 
-        # Generate
-        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
+        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=args.max_seq_length)
         if torch.cuda.is_available():
             inputs = {k: v.cuda() for k, v in inputs.items()}
 
@@ -777,8 +805,33 @@ def evaluate_model(model, tokenizer, test_dir: str, stage: int, max_samples: int
             pad_token_id=tokenizer.eos_token_id,
         )
 
-        completion = tokenizer.decode(outputs[0][len(inputs["input_ids"][0]):], skip_special_tokens=True)
-        print(f"Output:\n{completion[:500]}...")
+        completion_tokens = outputs[0][len(inputs["input_ids"][0]):]
+        completion = tokenizer.decode(completion_tokens, skip_special_tokens=True).strip()
+
+        filename = os.path.basename(fp)
+        generated_records.append((filename, completion, context))
+
+        if not sample_diff_printed:
+            print(f"[{stage_label}] Exemple de diff généré pour {filename}:\n{completion}\n")
+            sample_diff_printed = True
+
+    if judge_enabled and judge and judge_template and generated_records:
+        judge_prompts = [
+            judge_template.format(rules=rules_text, text=context, candidate=completion)
+            for _, completion, context in generated_records
+        ]
+        scores = judge.score_batch_concurrent(judge_prompts, concurrency=4)
+
+        print(f"[{stage_label}] Scores du juge:")
+        for (filename, _, _), score in zip(generated_records, scores):
+            print(f"  - {filename}: {score:.3f}")
+
+        if scores:
+            avg_score = sum(scores) / len(scores)
+            print(f"[{stage_label}] Score moyen: {avg_score:.3f}")
+
+    if model_was_training:
+        model.train()
 
 
 # -----------------------------
@@ -800,6 +853,8 @@ def main():
     parser.add_argument("--rules_path", type=str, default="data/rules.md")
     parser.add_argument("--judge_prompt", type=str, default="data/judge_prompt.md")
     parser.add_argument("--max_samples", type=int, default=None)
+    parser.add_argument("--eval_samples", type=int, default=3,
+                       help="Nombre de fichiers de test à évaluer après chaque stage")
 
     # Model
     parser.add_argument("--base_model", type=str, default="unsloth/Qwen3-4B-Thinking-2507-unsloth-bnb-4bit")
@@ -846,7 +901,8 @@ def main():
             checkpoint_dir=args.checkpoint_dir,
         )
 
-        evaluate_model(model, tokenizer, args.test_dir, args.stage)
+        stage_label = f"Stage {args.stage} (eval-only)"
+        evaluate_diffs_with_judge(model, tokenizer, args, stage_label=stage_label)
         return
 
     # Training mode
