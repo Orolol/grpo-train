@@ -515,7 +515,7 @@ def main() -> None:
     parser.add_argument("--max_samples", type=int, default=None)
 
     # Model
-    parser.add_argument("--base_model", type=str, default="unsloth/Qwen3-4B-Thinking-2507-unsloth-bnb-4bit")
+    parser.add_argument("--base_model", type=str, default="unsloth/Magistral-Small-2509-unsloth-bnb-4bit")
     parser.add_argument("--output_dir", type=str, default="output")
     parser.add_argument("--max_seq_length", type=int, default=6000)
     parser.add_argument("--lora_rank", type=int, default=32)

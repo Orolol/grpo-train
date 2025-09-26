@@ -21,7 +21,7 @@ Date de naissance, de mariage, de décès (et uniquement ces dates là. Pas de d
 - [Localité]
 
 Autres données personnelles 
-- Plaque d’immatriculation : [Immatriculation]
+- Plaque d’immatriculation : [Immatriculation]      
 - Numéro sécurité sociale : [N° SS]
 - Numéros de documents officiels : [nbre de caractères remplacés par X]
 - Compte bancaire : [IBAN]
@@ -29,22 +29,3 @@ Autres données personnelles
 A noter : s’il existe plusieurs éléments à anonymiser du même type, il faut numéroter le terme générique de manière à conserver la bonne compréhension tout au long du texte.
 Ex :  [Adresse 1], [Adresse 2] 
 
-Si aucune anonymisation n'est possible ou si aucune n'est a faire, ne pas ajouter de diff.
-
-Ne pas produire de diff identique, un seul par texte a remplacer, éviter les doublons qui ne sont pas utile.
-
-Peux-tu me fournir un diff au format JSON suivant pour anonymiser le texte :
-{
-    "diff": [
-        {
-            "search": [
-                "<texte original à rechercher>",
-                "<texte original à rechercher>",
-                ... // Ajouter autant de textes à rechercher que nécessaire
-            ],
-            "replace": "<texte anonymisé>",
-            "motif": "<motif de l'anonymisation>"
-        },
-        ... // Ajouter autant de diff que de texte à anonymiser
-    ]
-}
