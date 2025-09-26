@@ -441,12 +441,14 @@ class JudgeClient:
         scores = []
         for prompt in prompts:
             try:
-                resp = self._client.chat.completions.create(
+                resp = self._client.responses.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
+                    reasoning={"effort": "medium"},
+                    text={"verbosity": "low"},
                     max_completion_tokens=64,
                 )
-                content = resp.choices[0].message.content or "0"
+                content = resp.choices[0].message.content or ""
                 # Parse score from response
                 score = float(re.search(r"(\d+(?:\.\d+)?)", content).group(1))
                 scores.append(min(1.0, score / 10.0))
@@ -533,6 +535,8 @@ def train_stage1(args):
         raise RuntimeError("No training samples found")
 
     print(f"Training on {len(train_dataset)} samples")
+    
+    print(f"Sample 0:\nPrompt:\n{train_dataset[0]}")
 
     # Training arguments
     output_dir = os.path.join(args.output_dir, "stage1")
@@ -829,6 +833,7 @@ def evaluate_diffs_with_judge(
 
     generated_records: List[Tuple[str, str, str]] = []  # (filename, completion, context_text)
     sample_diff_printed = False
+    per_prompt_durations: List[float] = []
 
     for fp in selected_files:
         xml = read_file(fp)
@@ -837,6 +842,7 @@ def evaluate_diffs_with_judge(
 
         prompt = STAGE3_TEMPLATE.format(rules=rules_text, text=context)
 
+        start_time = time.perf_counter()
         inputs = _tokenize_for_generation(tokenizer, prompt, args.max_seq_length)
         if torch.cuda.is_available():
             inputs = {k: v.cuda() for k, v in inputs.items()}
@@ -848,6 +854,9 @@ def evaluate_diffs_with_judge(
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id,
         )
+
+        elapsed = time.perf_counter() - start_time
+        per_prompt_durations.append(elapsed)
 
         completion_tokens = outputs[0][len(inputs["input_ids"][0]):]
         completion = tokenizer.decode(completion_tokens, skip_special_tokens=True).strip()
@@ -876,6 +885,10 @@ def evaluate_diffs_with_judge(
 
     if model_was_training:
         model.train()
+
+    if per_prompt_durations:
+        avg_time = sum(per_prompt_durations) / len(per_prompt_durations)
+        print(f"[{stage_label}] Vitesse moyenne: {avg_time:.2f} s / prompt (n={len(per_prompt_durations)})")
 
 
 # -----------------------------
@@ -913,7 +926,7 @@ def main():
 
     # Judge (for Stage 3)
     parser.add_argument("--use_judge", action="store_true")
-    parser.add_argument("--judge_model", type=str, default="gpt-5-mini")
+    parser.add_argument("--judge_model", type=str, default="gpt-5")
     parser.add_argument("--judge_base_url", type=str,
                        default=os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1"))
     parser.add_argument("--judge_api_key", type=str,
