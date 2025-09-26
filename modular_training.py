@@ -58,6 +58,29 @@ from transformers import TrainingArguments
 from trl import SFTTrainer, GRPOConfig, GRPOTrainer
 
 
+def _tokenize_for_generation(tokenizer, prompt: str, max_length: int):
+    """Tokenize prompt for generation, with fallbacks for multimodal processors."""
+    kwargs = {
+        "return_tensors": "pt",
+        "truncation": True,
+        "max_length": max_length,
+    }
+
+    try:
+        return tokenizer(prompt, **kwargs)
+    except ValueError as exc:
+        msg = str(exc)
+        if "Invalid input images" not in msg:
+            raise
+
+        # Some processors (e.g. Pixtral) require an explicit tokenizer for text-only inputs
+        text_tokenizer = getattr(tokenizer, "tokenizer", None) or getattr(tokenizer, "text_tokenizer", None)
+        if text_tokenizer is None:
+            raise
+
+        return text_tokenizer(prompt, **kwargs)
+
+
 # -----------------------------
 # Utilities
 # -----------------------------
@@ -793,7 +816,7 @@ def evaluate_diffs_with_judge(
 
         prompt = STAGE3_TEMPLATE.format(rules=rules_text, text=context)
 
-        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=args.max_seq_length)
+        inputs = _tokenize_for_generation(tokenizer, prompt, args.max_seq_length)
         if torch.cuda.is_available():
             inputs = {k: v.cuda() for k, v in inputs.items()}
 
