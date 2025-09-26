@@ -81,6 +81,14 @@ def _tokenize_for_generation(tokenizer, prompt: str, max_length: int):
         return text_tokenizer(prompt, **kwargs)
 
 
+def _extract_text_from_stage3_prompt(prompt: str) -> str:
+    """Extract the source text block embedded in the Stage 3 prompt."""
+    match = re.search(r"Texte:\n(.*?)\n\nSortie JSON:", prompt, flags=re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return ""
+
+
 # -----------------------------
 # Utilities
 # -----------------------------
@@ -662,7 +670,10 @@ def train_stage3(args, stage2_checkpoint: Optional[str] = None):
 
     # Load templates
     rules_text = read_file(args.rules_path)
-    judge_template = read_file(args.judge_prompt) if os.path.exists(args.judge_prompt) else ""
+    if not os.path.exists(args.judge_prompt):
+        raise FileNotFoundError(f"Judge prompt not found: {args.judge_prompt}")
+    judge_template = read_file(args.judge_prompt)
+    print(f"Stage 3 utilisera le prompt juge: {args.judge_prompt}")
 
     # Build simplified dataset for GRPO
     rows = []
@@ -705,13 +716,17 @@ def train_stage3(args, stage2_checkpoint: Optional[str] = None):
 
         # Optional: use judge for better scoring
         if args.use_judge and judge_template:
-            judge_prompts = [
-                judge_template.format(
-                    rules=rules_text,
-                    text="[truncated]",
-                    candidate=comp
-                ) for comp in completions
-            ]
+            judge_prompts = []
+            for prm, comp in zip(prompts, completions):
+                source_text = _extract_text_from_stage3_prompt(prm)
+                judge_prompts.append(
+                    judge_template.format(
+                        rules=rules_text,
+                        text=source_text or "[texte indisponible]",
+                        candidate=comp,
+                    )
+                )
+
             judge_scores = judge.score_batch_concurrent(judge_prompts, concurrency=4)
             # Combine structural and judge scores
             scores = [0.3 * s + 0.7 * j for s, j in zip(scores, judge_scores)]
@@ -783,21 +798,28 @@ def evaluate_diffs_with_judge(
     rules_text = read_file(args.rules_path)
     judge_template = ""
     judge: Optional[JudgeClient] = None
-    judge_enabled = bool(args.judge_api_key and os.path.exists(args.judge_prompt))
+    prompt_path = args.judge_prompt
+    has_prompt = bool(prompt_path and os.path.exists(prompt_path))
+    has_key = bool(args.judge_api_key)
+    judge_enabled = has_key and has_prompt
 
     if judge_enabled:
         try:
-            judge_template = read_file(args.judge_prompt)
+            judge_template = read_file(prompt_path)
             judge = JudgeClient(
                 base_url=args.judge_base_url,
                 api_key=args.judge_api_key,
                 model=args.judge_model,
             )
+            print(f"[{stage_label}] Juge initialisé avec le prompt {prompt_path}.")
         except Exception as exc:
             print(f"[{stage_label}] Impossible d'initialiser le juge ({exc}), scores non disponibles.")
             judge_enabled = False
     else:
-        print(f"[{stage_label}] Juge indisponible - vérifier la clé API ou le prompt (skipping judge scoring).")
+        if not has_key:
+            print(f"[{stage_label}] Pas de clé API fournie: le juge ne sera pas lancé.")
+        if not has_prompt:
+            print(f"[{stage_label}] Prompt de juge introuvable: {prompt_path}")
 
     model_was_training = model.training
     model.eval()
