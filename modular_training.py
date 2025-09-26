@@ -789,8 +789,8 @@ def train_stage3(args, stage2_checkpoint: Optional[str] = None):
         auto_find_batch_size=True,
         gradient_accumulation_steps=8,
         num_generations=4,
-        max_prompt_length=2048,
-        max_completion_length=512,
+        max_prompt_length=8000,
+        max_completion_length=6000,
         num_train_epochs=args.epochs,
         report_to="none",
         output_dir=output_dir,
@@ -887,7 +887,7 @@ def evaluate_diffs_with_judge(
 
         outputs = model.generate(
             **inputs,
-            max_new_tokens=1024,
+            max_new_tokens=4096,
             temperature=0.7,
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id,
