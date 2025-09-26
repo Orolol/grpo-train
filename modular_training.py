@@ -671,7 +671,7 @@ def train_stage3(args, stage2_checkpoint: Optional[str] = None):
         try:
             xml = read_file(fp)
             section = extract_relevant_section(xml)
-            prompt = STAGE3_TEMPLATE.format(rules=rules_text, text=section[:2000])
+            prompt = STAGE3_TEMPLATE.format(rules=rules_text, text=section)
             rows.append({"prompt": prompt})
             if args.max_samples and len(rows) >= args.max_samples:
                 break
@@ -812,7 +812,7 @@ def evaluate_diffs_with_judge(
     for fp in selected_files:
         xml = read_file(fp)
         section = extract_relevant_section(xml)
-        context = section[:2000]
+        context = section
 
         prompt = STAGE3_TEMPLATE.format(rules=rules_text, text=context)
 
